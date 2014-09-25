@@ -42,7 +42,7 @@ rm arch/arm/boot/zImage
 
 echo "Make the kernel"
 # make KT747_d2att_defconfig
-make VARIANT_DEFCONFIG=cyanogen_d2att_defconfig SELINUX_DEFCONFIG=m2selinux_defconfig KT747_d2_defconfig
+make VARIANT_DEFCONFIG=cyanogen_d2_defconfig SELINUX_DEFCONFIG=m2selinux_defconfig KT747_d2_defconfig
 
 HOST_CHECK=`uname -n`
 if [ $HOST_CHECK = 'ktoonsez-VirtualBox' ] || [ $HOST_CHECK = 'task650-Underwear' ]; then
@@ -57,7 +57,7 @@ echo "Copy modules to Package"
 cp -a $(find . -name *.ko -print |grep -v initramfs) $PACKAGEDIR/system/lib/modules/
 cp 00post-init.sh $PACKAGEDIR/system/etc/init.d/00post-init.sh
 cp enable-oc.sh $PACKAGEDIR/system/etc/init.d/enable-oc.sh
-cp /home/ktoonsez/workspace/com.ktoonsez.KTweaker.apk $PACKAGEDIR/system/app/com.ktoonsez.KTweaker.apk
+cp $PARENT_DIR/com.ktoonsez.KTweaker.apk $PACKAGEDIR/system/app/com.ktoonsez.KTweaker.apk
 # cp ../Ramdisks/libsqlite.so $PACKAGEDIR/system/lib/libsqlite.so
 
 if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
