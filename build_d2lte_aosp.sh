@@ -52,14 +52,12 @@ else
 	echo "Others! - " + $HOST_CHECK
 	make -j`grep 'processor' /proc/cpuinfo | wc -l`
 fi;
-
-echo "Copy modules to Package"
-cp -a $(find . -name *.ko -print |grep -v initramfs) $PACKAGEDIR/system/lib/modules/
+#Following two lines are commented out as there are no modules since we went Moduleless.
+#echo "Copy modules to Package"
+#cp -a $(find . -name *.ko -print |grep -v initramfs) $PACKAGEDIR/system/lib/modules/
 cp 00post-init.sh $PACKAGEDIR/system/etc/init.d/00post-init.sh
 cp enable-oc.sh $PACKAGEDIR/system/etc/init.d/enable-oc.sh
 cp $PARENT_DIR/*.apk $PACKAGEDIR/system/app/
-#cp $PARENT_DIR/com.ktoonsez.KTweaker.apk $PACKAGEDIR/system/app/com.ktoonsez.KTweaker.apk
-#cp $PARENT_DIR/com.ktoonsez.KTweaker.apk $PACKAGEDIR/system/app/com.ktoonsez.KTmonitor.apk
 # cp ../Ramdisks/libsqlite.so $PACKAGEDIR/system/lib/libsqlite.so
 
 if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
