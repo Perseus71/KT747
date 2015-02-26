@@ -18,7 +18,7 @@ echo "Remove old Package Files"
 rm -rf $PACKAGEDIR/*
 
 echo "Setup Package Directory"
-mkdir -p $PACKAGEDIR/system/priv-app
+mkdir -p $PACKAGEDIR/system/app
 mkdir -p $PACKAGEDIR/system/lib/modules
 mkdir -p $PACKAGEDIR/system/etc/init.d
 
@@ -57,7 +57,7 @@ fi;
 #cp -a $(find . -name *.ko -print |grep -v initramfs) $PACKAGEDIR/system/lib/modules/
 cp 00post-init.sh $PACKAGEDIR/system/etc/init.d/00post-init.sh
 cp enable-oc.sh $PACKAGEDIR/system/etc/init.d/enable-oc.sh
-cp $PARENT_DIR/*.apk $PACKAGEDIR/system/priv-app/
+cp $PARENT_DIR/*.apk $PACKAGEDIR/system/app/
 # cp ../Ramdisks/libsqlite.so $PACKAGEDIR/system/lib/libsqlite.so
 
 if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
