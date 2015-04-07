@@ -38,10 +38,12 @@
 #include <trace/events/block.h>
 
 #include "blk.h"
+#include "kt_save_sched.h"
 
 static DEFINE_SPINLOCK(elv_list_lock);
 static LIST_HEAD(elv_list);
-
+static struct request_queue *globalq[20];
+static unsigned int queue_size = 0;
 /*
  * Merge hash stuff.
  */
@@ -1034,12 +1036,33 @@ fail_register:
 	return err;
 }
 
+int elevator_change_relay(const char *name, int screen_status)
+{
+	int i = 0;
+	load_prev_screen_on = screen_status;
+	for (i = 0; i < queue_size; i++)
+	{
+		if (i != 1 && i != 2)
+			elevator_change(globalq[i], name);
+	}
+	load_prev_screen_on = 0;
+	return 0;
+}
+
+int isload_prev_screen_on(void)
+{
+	return load_prev_screen_on;
+}
+
+extern void set_cur_sched(const char *name);
+
 /*
  * Switch this queue to the given IO scheduler.
  */
 static int __elevator_change(struct request_queue *q, const char *name)
 {
 	char elevator_name[ELV_NAME_MAX];
+	int ret = 0;
 	struct elevator_type *e;
 
 	if (!q->elevator)
@@ -1057,7 +1080,11 @@ static int __elevator_change(struct request_queue *q, const char *name)
 		return 0;
 	}
 
-	return elevator_switch(q, e);
+	//pr_alert("CHANGE_SCHEDULER1: %s-%s\n", name, q->elevator->type->elevator_name);
+	ret = elevator_switch(q, e);
+	//pr_alert("CHANGE_SCHEDULER2: %s-%s-%d\n", name, q->elevator->type->elevator_name, ret);
+	  
+	return ret;
 }
 
 int elevator_change(struct request_queue *q, const char *name)

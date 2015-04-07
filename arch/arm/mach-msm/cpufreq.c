@@ -210,7 +210,7 @@ int msm_cpufreq_set_freq_limits(uint32_t cpu, uint32_t min, uint32_t max)
 	else
 		limit->allowed_max = limit->max;
 
-	pr_debug("%s: Limiting cpu %d min = %d, max = %d\n",
+	pr_alert("%s: Limiting cpu %d min = %d, max = %d\n",
 			__func__, cpu,
 			limit->allowed_min, limit->allowed_max);
 
@@ -257,14 +257,16 @@ static int __cpuinit msm_cpufreq_init(struct cpufreq_policy *policy)
 	}
 
 	if (cur_freq != table[index].frequency) {
-		int ret = 0;
-		ret = acpuclk_set_rate(policy->cpu, table[index].frequency,
-				SETRATE_CPUFREQ);
+		int newfreq, ret = 0;
+		if (table[index].frequency > 1512000) newfreq = 1512000;
+		else newfreq = table[index].frequency;
+		ret = acpuclk_set_rate(policy->cpu, newfreq, SETRATE_CPUFREQ);
+		
 		if (ret)
 			return ret;
 		pr_info("cpufreq: cpu%d init at %d switching to %d\n",
-				policy->cpu, cur_freq, table[index].frequency);
-		cur_freq = table[index].frequency;
+				policy->cpu, cur_freq, newfreq);
+		cur_freq = newfreq;
 	}
 
 	policy->cur = cur_freq;

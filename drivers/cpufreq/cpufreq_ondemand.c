@@ -71,6 +71,10 @@ static void do_dbs_timer(struct work_struct *work);
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				unsigned int event);
 
+static bool boostpulse_relayf = false;
+static unsigned int boostpulse_relay_sr = 0;
+static unsigned int Lboostpulse_value = 1134000;
+
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND
 static
 #endif
@@ -305,6 +309,12 @@ static ssize_t show_sampling_rate_min(struct kobject *kobj,
 }
 
 define_one_global_ro(sampling_rate_min);
+
+static ssize_t show_boostpulse_value(struct kobject *kobj,
+				      struct attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", Lboostpulse_value / 1000);
+}
 
 /* cpufreq_ondemand Governor Tunables */
 #define show_one(file_name, object)					\
@@ -704,6 +714,23 @@ skip_this_cpu_bypass:
 	return count;
 }
 
+static ssize_t store_boostpulse_value(struct kobject *a, struct attribute *b,
+			       const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+
+	if (input * 1000 > 2100000)
+		input = 2100000;
+
+	Lboostpulse_value = input * 1000;
+	return count;
+}
+
 define_one_global_rw(sampling_rate);
 define_one_global_rw(io_is_busy);
 define_one_global_rw(up_threshold);
@@ -716,6 +743,7 @@ define_one_global_rw(down_differential_multi_core);
 define_one_global_rw(optimal_freq);
 define_one_global_rw(up_threshold_any_cpu_load);
 define_one_global_rw(sync_freq);
+define_one_global_rw(boostpulse_value);
 define_one_global_rw(input_boost);
 
 static struct attribute *dbs_attributes[] = {
@@ -732,6 +760,7 @@ static struct attribute *dbs_attributes[] = {
 	&optimal_freq.attr,
 	&up_threshold_any_cpu_load.attr,
 	&sync_freq.attr,
+	&boostpulse_value.attr,
 	&input_boost.attr,
 	NULL
 };
@@ -769,6 +798,18 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	policy = this_dbs_info->cur_policy;
 	if(policy == NULL)
 		return;
+	if (boostpulse_relayf)
+	{
+		if (boostpulse_relay_sr != 0)
+			dbs_tuners_ins.sampling_rate = boostpulse_relay_sr;
+		boostpulse_relayf = false;
+		if (policy->cur > Lboostpulse_value)
+			return;
+
+		__cpufreq_driver_target(policy, Lboostpulse_value,
+			CPUFREQ_RELATION_H);
+		return;
+	}
 
 	/*
 	 * Every sampling_rate, we check, if current idle time is less
@@ -868,7 +909,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		 * For that case consider other cpu is loaded so that
 		 * frequency imbalance does not occur.
 		 */
-
+	
 		if ((j_dbs_info->cur_policy != NULL)
 			&& (j_dbs_info->cur_policy->cur ==
 					j_dbs_info->cur_policy->max)) {
@@ -960,6 +1001,20 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			__cpufreq_driver_target(policy, freq,
 				CPUFREQ_RELATION_L);
 		}
+	}
+}
+
+extern void ondemand_is_active(bool val);
+
+void boostpulse_relay_od(void)
+{
+	if (Lboostpulse_value > 0)
+	{
+		//pr_info("BOOST_PULSE_FROM_INTERACTIVE");
+		if (dbs_tuners_ins.sampling_rate != min_sampling_rate)
+			boostpulse_relay_sr = dbs_tuners_ins.sampling_rate;
+		boostpulse_relayf = true;
+		dbs_tuners_ins.sampling_rate = min_sampling_rate;
 	}
 }
 
