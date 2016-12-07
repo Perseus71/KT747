@@ -2881,7 +2881,7 @@ int msm_ipc_router_get_curr_pkt_size(struct msm_ipc_port *port_ptr)
 
 int msm_ipc_router_bind_control_port(struct msm_ipc_port *port_ptr)
 {
-	if (!port_ptr)
+	if (unlikely(!port_ptr || port_ptr->type != CLIENT_PORT))
 		return -EINVAL;
 
 	down_write(&local_ports_lock_lha2);
@@ -3363,11 +3363,6 @@ static int __init msm_ipc_router_init(void)
 		pr_err("%s: Unable to create IPC logging for IPC RTR",
 			__func__);
 
-	msm_ipc_router_workqueue =
-		create_singlethread_workqueue("msm_ipc_router");
-	if (!msm_ipc_router_workqueue)
-		return -ENOMEM;
-
 	debugfs_init();
 
 	for (i = 0; i < SRV_HASH_SIZE; i++)
@@ -3393,6 +3388,10 @@ static int __init msm_ipc_router_init(void)
 	if (ret < 0)
 		pr_err("%s: Security Init failed\n", __func__);
 
+	msm_ipc_router_workqueue =
+		create_singlethread_workqueue("msm_ipc_router");
+	if (!msm_ipc_router_workqueue)
+		return -ENOMEM;
 	complete_all(&msm_ipc_local_router_up);
 	return ret;
 }
